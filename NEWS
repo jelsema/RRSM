@@ -1,0 +1,85 @@
+===========================
+## THE TO-DO LIST:
+
+# GLOBAL IDEAS
+- Unify the arguments a bit
+  - coords : observed locations
+  - knots  : selected knot locations
+- Rewrite rr_em_fb to use same variable names/etc as other EM algorithms.
+- Any rewrite of the kriging functions needed?
+
+
+# PREDICTION
+- Go through the two prediction programs (mainly, the universal kriging) and clean up the code, make sure it's correct, etc.
+- Allow prediction functions to take argument of class "rr_est". This cleans up the parameters (no more V, ssq, tsq, etc.)
+  - If bhat=NULL then compute bhat = GLS estimate. Otherwise use the given estimate.
+  - COMPARE the kriging predictions with generic mixed model predictions. Should be the same.
+- Add Bayesian methods
+  - FRRSM
+  - Other priors for V?
+- Add another residual term, per the reviews from JASA on knot paper.
+
+
+# ESTIMATION / FITTING
+- Add in the programs from dissertation (MOM estimation, robust estimation and fitting, FRRSM)
+- Make rr_est a CLASS have these functions produce an object of class rr_est.
+- Then a single function rr_est which then CALLS the various estimation algorithms:
+  - Partial EM (fixed beta)
+  - EM
+  - Constrained EM
+  - MOM (CJ)
+  - MOM (Robust)
+- Give informative errors in case of insufficient arguments
+- Does an iterative version of MOM, to estimate beta, work?
+- Make function to estimate tau.
+- More sophisticated model, dependent error structure?
+- Allow 'knots' to have another dimension, to be multi-resolutional.
+  - List with length = number of resolutions?
+  - Additional column for resolution ID?
+
+
+# MISC
+- Put in some warnings for when someone tries to run blindly
+  - Didn't provide knots
+  - Didn't estimate parameters
+  - Didn't calculate S
+  - etc
+- Where do these warnings go?
+  - When someone tries to estimate parameters --> rr_est
+  - When someone tries to predict --> rr_krige (or change to rr_predict? Yes, I think that's better)
+
+
+# TESTING / VALIDATION
+- Test the functions. See if things generally play well.
+  - Simulate some data
+  - Estimate knots
+  - Estimate parameters
+  - Make predictions
+  - Do this for various types of models - normal, lognormal, various estimation types, etc.
+- Write some programs for testing to put in RRSM/tests
+
+
+
+
+
+===========================
+VERSION HISTORY:
+
+Version 0.0-1, yyyy-mm-dd
+- Initial CRAN release.
+
+===========================
+Author / Maintainer:
+Casey M. Jelsema
+Biostatistics Branch
+National Intitute of Environmental Health Sciences
+<casey.jelsema@nih.gov>
+
+
+
+
+
+
+
+
+
