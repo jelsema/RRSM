@@ -93,7 +93,7 @@ pairwise_dist <- function( coords1, coords2=coords1, ... ){
 #' 
 #' @export
 #' 
-basis_mat <- function( coords , knots , mult=1.3 , ...){
+basis_mat <- function( coords, knots, mult=1.3, FUN="bisq", ...){
   
   nd <- nrow(coords)
   nk <- nrow(knots)
@@ -105,10 +105,19 @@ basis_mat <- function( coords , knots , mult=1.3 , ...){
   
   ## Enable other choices of basis function
   ## Create the S-matrix (bisquare)
-  for( ii in 1:nk ){
-    a1 <- mult*min( k_dist[k_dist[,ii]>0, ii]  )
-    knot_ind[,ii] <- kd_dist[,ii] <= a1
-    S[,ii] <- ( (1 - (kd_dist[,ii]/a1)^2 )^2 )*knot_ind[,ii]
+  if( FUN=="bisq" ){
+    for( ii in 1:nk ){
+      a1 <- mult*min( k_dist[k_dist[,ii]>0, ii]  )
+      knot_ind[,ii] <- kd_dist[,ii] <= a1
+      S[,ii] <- ( (1 - (kd_dist[,ii]/a1)^2 )^2 )*knot_ind[,ii]
+    }
+  }
+  if( FUN=="mod_bisq" ){
+    
+    for( ii in 1:nk ){
+      dd     <- sqrt( ((coords[,1]-knots[ii,1])/mult[1])^2 + ((coords[,2]-knots[ii,2])/mult[2])^2 )
+      S[,ii] <- as.numeric(dd <= 2)*(1 - .25*dd)
+    }
   }
   
   ## Return the S matrix

@@ -37,11 +37,9 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
   
   # If V is not provided then it must be estimated
   if( is.null(V) ){
-    
     method <- cc$method
     # epsilon
     # max_iter
-    
     if( is.null(method) ){
       #warning("No estimation method provided, attempting EM Algorithm") 
     }
@@ -53,13 +51,11 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
   
   
   
-  # Write logic to properly set up sigma^2 vs tau^2
-  
-  
-  ngrid <- dim(pgrid)[1]
+  ## Write logic to properly set up sigma^2 vs tau^2
+  ngrid  <- dim(pgrid)[1]
   nk     <- dim(S)[2]
   Preds  <- cbind( pgrid , rep(0,ngrid) , rep(0,ngrid) )
-
+  
   ## Big outside computations
   SS <- t(S)%*%S
   XX <- t(X)%*%X
@@ -145,7 +141,7 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
     }    
     
   } ## END OF KRIGING
-  colnames(Preds) <- c( "Xdim" , "Ydim" , "Y" , "MSPE" )
+  colnames(Preds) <- c( "Xdim" , "Ydim" , "Y" , "RMSPE" )
   rownames(Preds) <- NULL
     
   
