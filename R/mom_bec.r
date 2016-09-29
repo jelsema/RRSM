@@ -92,10 +92,20 @@ mom_bec <- function( empirical="cj", coords, Y, X, S, bin_centers=NULL, ...){
     #bin_centers <- bin_centers[-id_bin,]        
     
     ## Merge bin with next closest bin    
-    kk_dist  <- pairwise_dist( bin_centers[-id_bin,,drop=FALSE], bin_centers[id_bin, ,drop=FALSE], ... )
+    # kk_dist  <- pairwise_dist( bin_centers[-id_bin,,drop=FALSE], bin_centers[id_bin, ,drop=FALSE], ... )
+    # id_merge <- which.min(kk_dist)
+    # new_bin  <- colMeans( bin_centers[c(id_bin,id_merge),] )
+    # bin_centers <- rbind(bin_centers[-c(id_bin,id_merge),], new_bin)
+    
+    # dis_bin  = bin to discard
+    # rem_bins = bins remaining after removing discarded bin
+    dis_bin  <- bin_centers[ id_bin, ,drop=FALSE]
+    rem_bins <-  bin_centers[-id_bin,,drop=FALSE]
+    kk_dist  <- pairwise_dist( rem_bins, dis_bin )
     id_merge <- which.min(kk_dist)
-    new_bin  <- colMeans( bin_centers[c(id_bin,id_merge),] )
-    bin_centers <- rbind(bin_centers[-c(id_bin,id_merge),], new_bin)
+    new_bin  <- colMeans( rbind(rem_bins[id_merge,], dis_bin ) )
+    bin_centers <- rbind( rem_bins[-id_merge,], new_bin)
+    
     
     nbox    <- nrow(bin_centers)  
     kd_dist <- pairwise_dist( coords, bin_centers, ... )
