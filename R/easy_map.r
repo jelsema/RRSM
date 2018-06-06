@@ -33,8 +33,7 @@
 #' 
 #' 
 
-easy_map <-
-function( data , knots=NULL , show.knots=TRUE , panel.plot=FALSE , 
+easy_map <- function( data , knots=NULL , show.knots=TRUE , panel.plot=FALSE , 
                       panel1=NULL , panel2=NULL , cex=NULL , cex.knot=NULL ,
                       xlim=NULL , ylim=xlim , x.ticks=NULL , y.ticks=x.ticks ,
                       alpha=NULL , col.map="ylgn" , ... ){

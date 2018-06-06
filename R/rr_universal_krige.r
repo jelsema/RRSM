@@ -8,6 +8,7 @@
 #' 
 #' @rdname rr_krige
 #' 
+#' @importFrom MASS ginv
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
 #' @export
@@ -66,9 +67,11 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
   SdvS <- ginv( ginv(V) + (SS/ssq) )
   
   XPX  <- XX/ssq - (t(SX)/ssq) %*% SdvS %*% (SX/ssq)
+  XPXi <- ginv(XPX)
   XPY  <- XY/ssq - (t(SX)/ssq) %*% SdvS %*% (SY/ssq)
-  bhat <- ginv(XPX)%*%XPY
-
+  bhat <- XPXi %*% XPY
+  
+  
   R  <- Y - X%*%bhat
   SR <- t(S)%*%R  
   
@@ -99,7 +102,7 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
       XdC <- (t(X)%*%t(Ck))/ssq - (t(SX/ssq)%*%(SdvS%*%SdC))
       R1  <- XSo1 - XdC
       
-      mspe <- sqrt(c( CSoSo - CdC + t(R1)%*% ginv(XPX) %*% R1 ))
+      mspe <- sqrt(  c( CSoSo - CdC + t(R1)%*% XPXi %*% R1 )  )
       
       # MSPE: Preds[krg,4]
       c(pred, mspe)
@@ -132,7 +135,7 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
       XdC <- (t(X)%*%t(Ck))/ssq - (t(SX/ssq)%*%(SdvS%*%SdC))
       R1  <- XSo1 - XdC
       
-      mspe <- sqrt( c( CSoSo - CdC + t(R1)%*% ginv(XPX) %*% R1 ) )
+      mspe <- sqrt( c( CSoSo - CdC + t(R1)%*% XPXi %*% R1 ) )
       
       # MSPE: Preds[krg,4]
       Preds[krg,3] <- pred

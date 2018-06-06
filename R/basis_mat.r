@@ -39,7 +39,7 @@ pairwise_dist <- function( coords1 , coords2=coords1 , dmethod=SpatialTools::dis
   
   if( identical(dmethod, SpatialTools::dist2) ){
     ## Euclidean distance
-    all_dist <- SpatialTools::dist2( coords1, coords2 )  
+    all_dist <- SpatialTools::dist2( as.matrix(coords1), as.matrix(coords2) )  
   } else{
     ## Distance on the sphere
     # dmethod2 <- get( paste0("geosphere::",dmethod ) )

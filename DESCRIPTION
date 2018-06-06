@@ -4,7 +4,7 @@ Version: 0.0-1
 Depends: R (>= 3.0.2), MASS, foreach, doParallel
 Imports: methods, ggplot2, isotone, Rcpp, Rfit, SpatialTools, fields, geosphere, quantreg, ICSNP
 Date: 2015-05-18
-Description: Various methods for reduced rank spatial analysis, including Empirical Bayesian and fully Bayesian methods.
+Description: Various methods for reduced rank spatial analysis.
 Author: Casey M. Jelsema
 Maintainer: Casey M. Jelsema <casey.jelsema@nih.gov>
 BuildVignettes: false
