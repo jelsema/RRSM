@@ -1,4 +1,14 @@
 ===========================
+COMMENT:
+
+This package is, at the moment, primarily intended as a means for the author to organize
+the code he has written relating to reduced rank spatial models, for the purposes of his
+own use, and to share with his collaborators. It is only released in its present state
+at the request of peer reviews.
+
+
+
+===========================
 ## THE TO-DO LIST:
 
 # GLOBAL IDEAS
@@ -10,7 +20,7 @@
 
 
 # PREDICTION
-- Go through the two prediction programs (mainly, the universal kriging) and clean up the code, make sure it's correct, etc.
+- Go through the two prediction programs (mainly, the universal kriging) and clean up the code, etc.
 - Allow prediction functions to take argument of class "rr_est". This cleans up the parameters (no more V, ssq, tsq, etc.)
   - If bhat=NULL then compute bhat = GLS estimate. Otherwise use the given estimate.
   - COMPARE the kriging predictions with generic mixed model predictions. Should be the same.
@@ -59,22 +69,22 @@
 - Write some programs for testing to put in RRSM/tests
 
 
+# Following should be in the NAMESPACE prior to building (I think?)
+  importFrom(Rcpp, evalCpp)
 
+  useDynLib(RRSM, .registration=TRUE)
+  exportPattern("^[[:alpha:]]+")
 
 
 ===========================
 VERSION HISTORY:
 
-Version 0.0-1, yyyy-mm-dd
-- Initial CRAN release.
+Version 0.0-1, 2017-05-09
+ - Package released as supplementary material for submitted manuscript.
 
 ===========================
 Author / Maintainer:
-Casey M. Jelsema
-Biostatistics Branch
-National Intitute of Environmental Health Sciences
-<casey.jelsema@nih.gov>
-
+blinded
 
 
 

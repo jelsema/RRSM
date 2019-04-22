@@ -7,6 +7,8 @@
 #' @param fitting string describing which fitting method to be used to fit the covariance matrix. See details.
 #' @param SigM the binned empirical covariance matrix.
 #' @param Sbar a similarly binned version of the matrix of basis functions.
+#' @param mcn if positive, winsorizes eigenvalues of covariance matrix so that the condition number is at max \code{mcn}.
+#' @param vlift if \code{TRUE}, lifts eigenvalues of robust covariance matrix ("proportional").
 #' @param ... space for additional arguments to be passed to the fitting function.
 #' 
 #' @details
@@ -21,7 +23,7 @@
 #' 
 #' 
 #' @note
-#' The values of \code{SigM} and \code{Sbar} are intended to be the output values of 
+#' The values of \code{SigM} and \code{Sbar} are intended to be the output values of \code{\link{mom_bec}}
 #' 
 #' @return
 #' A matrix.
@@ -31,19 +33,54 @@
 #' \code{\link{mom_bec}}
 #'  
 #' @importFrom quantreg rq.fit.br
+#' @importFrom pracma fzero
 #' 
 #' @export
 #' 
 
 
 
-mom_fit <- function( fitting="frobenius", SigM, Sbar , ...){
+mom_fit <- function( fitting="frobenius", SigM, Sbar , mcn=1000, vlift="none",  ...){
     
   nk <- ncol(Sbar)  # Number of knots
   nb <- ncol(SigM)  # Number of bins
   
   if( fitting=="frobenius" ){
     ## The LEAST-SQUARES / FROBENIUS Fitting method
+    
+    ## LIFT THE EIGENVALUES OF [SigM] IF NECESSARY
+    SVD    <- eigen(SigM)
+    EigVec <- SVD$vectors
+    EigVal <- SVD$values
+    
+    if( min(EigVal) < 0 ){
+      MM <- length(EigVal)
+      qq <- ncol(Sbar)
+      aa <- -1
+      while( aa < 0 ){
+        if( qq >= 0 ){
+          lam0 <- max( c( quantile(EigVal, (MM - qq)/MM), 0) )
+        } else{
+          lam0 <- EigVal[1] - qq
+        }
+        # aa <- fzero( tr_var, x=c(0,10), lam0=lam0, EigVal=EigVal )$x
+        chk <- tryCatch( 
+          expr    = fzero( tr_var, x=c(0,10), lam0=lam0, EigVal=EigVal )$x,
+          warning = function(c) "bad_Result" ,
+          error   = function(c) "bad_Result"
+        )
+        if( is.numeric(chk) ){
+          aa <- chk
+        } else{
+          qq <- qq - 1
+        }
+      }
+      
+      sEigVal <- EigVal
+      idx1    <- which( EigVal < lam0 )
+      sEigVal[idx1] <- lam0 * exp( aa*(sEigVal[idx1]-lam0) )
+      SigM <- EigVec %*% diag(sEigVal) %*% t(EigVec)
+    } ## End of lifting eigenvalues
     
     # Get the QR decomposition of Sbar
     Q <- qr.Q( qr(Sbar))
@@ -69,7 +106,7 @@ mom_fit <- function( fitting="frobenius", SigM, Sbar , ...){
     Dbar <- ssq * diag(nb)
     # Dbarhin <- 1/ss1*diag(nb)
     Vhat <- RRin%*%t(QQ)%*%(SigM - Dbar)%*%QQ%*%t(RRin)
-        
+    
   }
   
   if( fitting=="robust" ){
@@ -94,20 +131,37 @@ mom_fit <- function( fitting="frobenius", SigM, Sbar , ...){
     
     Vhat <- 0.5*( Vhat + t(Vhat) )
     
+    ## LIFT THE EIGENVALUES OF [Vhat] IF NECESSARY
+    ## MAYBE WINSORIZE THE EIGENVALUES HERE INSTEAD OF THIS SCHEME?
+
+    if( vlift == "proportional" ){
+      SVD    <- eigen(Vhat)
+      EigVec <- SVD$vectors
+      EigVal <- SVD$values
+      
+      if( min(EigVal) < 0 ){
+        EigValSum <- sum(EigVal)                              # Sum of Eignevalues, to be partitioned
+        EigVal <- EigVal - min(EigVal)                        # Shift Eigenvalues
+        NewEigVals <- EigValSum * (EigVal/sum(EigVal))        # Compute new eignevalues by weighting shifted eigenvalues
+        Vhat <- EigVec %*% diag(NewEigVals) %*% solve(EigVec) # Reconstitute Vhat
+      } 
+      
+    }
+    ## End of lifting eigenvalues
+    
   }
   
-  ## LIFT THE EIGENVALUES
-  ## Look at the automatic way to do this described elsewhere (Kang? Katzfuss?)
-  SVD    <- eigen(Vhat)
-  EigVec <- SVD$vectors
-  EigVal <- SVD$values
-  
-  if( min(EigVal) < 0 ){
-    EigValSum <- sum(EigVal)                              # Sum of Eignevalues, to be partitioned
-    EigVal <- EigVal - min(EigVal)                        # Shift Eigenvalues if (probably) necessary
-    NewEigVals <- EigValSum * (EigVal/sum(EigVal))        # Compute new eignevalues by weighting shifted eigenvalues
-    Vhat <- EigVec %*% diag(NewEigVals) %*% solve(EigVec) # Reconstitute Vhat
+  if( mcn > 0 ){
+    SVD    <- eigen(Vhat)
+    EigVec <- SVD$vectors
+    EigVal <- SVD$values
+    idx_lift <- max( which( EigVal[1] / EigVal < mcn ) )
+    
+    NewEigVals <- EigVal
+    NewEigVals[ idx_lift:length(EigVal) ] <- EigVal[idx_lift]
+    Vhat <- EigVec %*% diag(NewEigVals) %*% solve(EigVec)
   }
+  
   
   ## Make the return object
   return_obj <- list( bhat=NULL, V=Vhat, ssq=ssq )
