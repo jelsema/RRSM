@@ -1,11 +1,11 @@
 #' Simulate large spatial dataset
 #' 
 #' @description
-#' Simulates a large spatial dataset.
+#' Simulates a large spatial dataset according to a Spatial Random Effects model: \eqn{Y = X*beta + S*eta + epsilon}{Y = X\beta + S\eta + \epsilon}
 #' 
 #' @param X the design matrix for the large-scale variation (fixed effects).
 #' @param S the matrix of basis functions (design matrix for the random effect).
-#' @param beta the large-scale variation vector.
+#' @param beta the large-scale variation vector (fixed-effects slopes).
 #' @param V the covariance matrix of the reduced rank process.
 #' @param ssq the residual variance.
 #' @param theta the spatial dependence parameter, for if \code{V} needs to be calculated.
@@ -45,15 +45,14 @@ sim_rrsm <- function( X, S, beta=NULL, V=NULL,
   
   ## Is S provided?
   if( missing(S) ){
-    stop("Matrix of basis functions 'S' is missing. To create 'S', try '?basis_mat' ")
+    stop("Matrix of basis functions 'S' is missing. See function `basis_mat' ")
   }
-  
   
   ## Is V provided?
   ## - Work in alternate covariance structures here when time permits
   ## - e.g. a matern class
   if( is.null(V) ){
-    if( is.null(theta) || is.null(knots) ){stop("Missing one of V or {theta,knots}")}
+    if( is.null(theta) || is.null(knots) ){ stop("Missing one of V or {theta, knots}") }
     warning("Covariance matrix 'V' was not provided. Constructing 'V' based 'knots' and 'theta', but unsupervised construction of 'V' is not recommended.")
     warning("Using exponential covariance function to construct 'V' ")
     

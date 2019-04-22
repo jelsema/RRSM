@@ -43,7 +43,7 @@ pairwise_dist <- function( coords1 , coords2=coords1 , dmethod=SpatialTools::dis
   } else{
     ## Distance on the sphere
     # dmethod2 <- get( paste0("geosphere::",dmethod ) )
-    all_dist <- geosphere::distm( coords1, coords2, fun=dmethod, ... ) / 1000
+    all_dist <- geosphere::distm( coords1, coords2, ... ) / 1000
   }
   
   # Return distance
@@ -53,25 +53,25 @@ pairwise_dist <- function( coords1 , coords2=coords1 , dmethod=SpatialTools::dis
 
 
 if( FALSE ){
-pairwise_dist <- function( coords1, coords2=coords1, ... ){
-  
-  n1 <- nrow(coords1)
-  n2 <- nrow(coords2)
-  dist_mat <- zeros(n1, n2)
-  
-  if( n1 >= n2 ){
-    for( ii in 1:n2 ){
-      dist_mat[,ii] <- vector_dist( coords1, coords2[ii,], ... )
+  pairwise_dist <- function( coords1, coords2=coords1, ... ){
+    
+    n1 <- nrow(coords1)
+    n2 <- nrow(coords2)
+    dist_mat <- zeros(n1, n2)
+    
+    if( n1 >= n2 ){
+      for( ii in 1:n2 ){
+        dist_mat[,ii] <- vector_dist( coords1, coords2[ii,], ... )
+      }
+    } else{
+      for( ii in 1:n1 ){
+        dist_mat[ii,] <- vector_dist( coords2, coords1[ii,], ... )
+      }
     }
-  } else{
-    for( ii in 1:n1 ){
-      dist_mat[ii,] <- vector_dist( coords2, coords1[ii,], ... )
-    }
+    
+    return( dist_mat )
+    
   }
-  
-  return( dist_mat )
-  
-}
 }
 
 #' Construct matrix of basis functions
@@ -82,11 +82,15 @@ pairwise_dist <- function( coords1, coords2=coords1, ... ){
 #' @param coords the coordinates of the data locations (dimension \eqn{n1 x p}).
 #' @param knots the coordinates of the knots (dimension \eqn{n2 x p}). 
 #' @param mult multiplier for range of each basis function.
+#' @param FUN the basis functions, currently bisquare (bisq) and modified bisquare (mod_bisq) are accepted.
 #' @param ... space for additional arguments
 #' 
 #' @details
 #' Distances are computed using \code{\link{pairwise_dist}}, see documention of that function
 #' for different methods of calculating distance.
+#' 
+#' @note
+#' In future releases, custom basis functions will be permitted.
 #' 
 #' @return
 #' A matrix of size \eqn{n1 \times n2} containing pairwise distances.

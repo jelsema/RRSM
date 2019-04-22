@@ -76,7 +76,8 @@ mom_bec <- function( empirical="cj", coords, Y, X, S, bin_centers=NULL, ...){
   ## Use Voronii tesslation based on bin_centers
   nbox    <- nrow(bin_centers)  
   boxFreq <- cbind( 1:nrow(bin_centers), rep(0,nbox) )
-  kd_dist <- pairwise_dist( coords, bin_centers, ... )
+  #kd_dist <- pairwise_dist( coords, bin_centers, ... ) # <----------
+  kd_dist <- pairwise_dist( coords, bin_centers  )
   vBins   <- apply( kd_dist, 1 , 'which.min' ) 
   for( ii in 1:nbox){
     jj <- boxFreq[ii,1]
@@ -108,7 +109,8 @@ mom_bec <- function( empirical="cj", coords, Y, X, S, bin_centers=NULL, ...){
     
     
     nbox    <- nrow(bin_centers)  
-    kd_dist <- pairwise_dist( coords, bin_centers, ... )
+    #kd_dist <- pairwise_dist( coords, bin_centers, ... ) # <----------
+    kd_dist <- pairwise_dist( coords, bin_centers )
     vBins   <- apply( kd_dist, 1 , 'which.min' ) 
     boxFreq <- cbind( 1:nrow(bin_centers), rep(0,nbox) )
     for( ii in 1:nbox){
@@ -152,7 +154,8 @@ mom_bec <- function( empirical="cj", coords, Y, X, S, bin_centers=NULL, ...){
     }
     for(ii in 1:(nbox-1)){
       for( jj in (ii+1):nbox){
-        SD <- pSD( R[ vBins==boxFreq[ii] ] , R[ vBins==boxFreq[jj] ] , ... )
+        # SD <- pSD( R[ vBins==boxFreq[ii] ] , R[ vBins==boxFreq[jj] ] , ... )  # <----------
+        SD <- pSD( R[ vBins==boxFreq[ii] ] , R[ vBins==boxFreq[jj] ]  )
         PS11 <- SD$S
         PD11 <- SD$D
         SigM[ii,jj] <- ( mad(PS11)^2 - mad(PD11)^2 )/4
@@ -204,6 +207,7 @@ mom_bec <- function( empirical="cj", coords, Y, X, S, bin_centers=NULL, ...){
     diag(SigM) <- on_diag
     
   }
+  
   
   ## Calculate the binned S matrix
   # M    <- ncol( SigM )

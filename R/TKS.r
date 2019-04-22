@@ -339,7 +339,6 @@ threshold_knots <- function( coords , R , u , delta, ...){
 #' @param num_slice if \code{slices} is null, this will set the number of percentile slices.
 #' @param slice_int if \code{slices} is null, the slices will be evenly spaces between the min and max of \code{slice_int}.
 #' @param vpred method to estimate parameters for the validation stage of TKS.
-#' @param nres number of resolutions of knots to seelct (currently only 1 or 2 resolutions can be handled).
 #' @param ... space for additional arguments.
 #' 
 #' @return
@@ -357,7 +356,7 @@ threshold_knots <- function( coords , R , u , delta, ...){
 
 TKS <- function( Y, X, coords, R, test_set=NULL, M=round(0.1*nrow(X)), penalty=0.5, 
                  BWs=NULL, num_bw=NULL, bw_int=c(0.03,0.12),
-                 slices=NULL, num_slice=NULL, slice_int=c(0.98,0.2), vpred="EM", nres=1, ... ){
+                 slices=NULL, num_slice=NULL, slice_int=c(0.98,0.2), vpred="EM", ... ){
   
   nd <- nrow(X)
   
@@ -380,9 +379,8 @@ TKS <- function( Y, X, coords, R, test_set=NULL, M=round(0.1*nrow(X)), penalty=0
     ylen <- max( coords[,2] ) - min( coords[,2] )
     
     dlen <- round(sqrt( xlen^2 + ylen^2 ))
-    
-    sbw <- dlen*min(bw_int)
-    lbw <- dlen*max(bw_int)
+    sbw  <- dlen*min(bw_int)
+    lbw  <- dlen*max(bw_int)
     
     BWs <- seq( sbw , lbw , length.out= num_bw )
     
@@ -409,17 +407,16 @@ TKS <- function( Y, X, coords, R, test_set=NULL, M=round(0.1*nrow(X)), penalty=0
     #h2 <- 1.5*BWs[ii]
     h2 <- h1
     
-    knots <- empirical_knots( coords=coords_train , R=R_train , delta1=h1 , delta2=h2 ,
-                              slices=slices , ... )
+    # knots <- empirical_knots( coords=coords_train , R=R_train , delta1=h1 , delta2=h2 , slices=slices )
+    knots <- empirical_knots( coords=coords_train , R=R_train , 
+                              delta1=h1 , delta2=h2 , slices=slices , ... )
     
     all_knot_sets[[ii]] <- knots
-    
-    # dist.args=dist.args)
-    
-    nk_bw  <- nrow(knots)
+    nk_bw               <- nrow(knots)
     
     
     ## Predictions / MSE using FRK type of model
+    # S      <- basis_mat( coords , knots  )
     S      <- basis_mat( coords , knots, ... )
     S_test  <- S[  test_set , ]
     S_train <- S[ -test_set , ]
@@ -434,6 +431,9 @@ TKS <- function( Y, X, coords, R, test_set=NULL, M=round(0.1*nrow(X)), penalty=0
       Yhat  <- preds[,3]
     } else if( vpred == "EM"){
       # Method 2: EM Estimation + Kriging
+      #   ests_mom <- rr_est( method="EM", Y=Y_train, X=X_train, S=S_train, coords=coords_train )
+      #   preds <- rr_universal_krige( Y=Y_train, X=X_train, S=S_train, coords=coords_train, Xpred=X_test, Spred=S_test, pgrid=coords_test , V = ests_mom$V, ssq=ests_mom$ssq )$Preds
+
       ests_mom <- rr_est( method="EM", Y=Y_train, X=X_train, S=S_train, coords=coords_train, ... )
       preds <- rr_universal_krige( Y=Y_train, X=X_train, S=S_train, coords=coords_train, 
                                    Xpred=X_test, Spred=S_test, pgrid=coords_test ,
@@ -452,7 +452,7 @@ TKS <- function( Y, X, coords, R, test_set=NULL, M=round(0.1*nrow(X)), penalty=0
     # --> Need to get the parameter estimates for a given covariance model
     
     ## Evaluate the objective function
-    if( SSE*sqrt(nk_bw) < min_SS ){
+    if(  SSE*(nk_bw^penalty) < min_SS  ){
       min_SS   <- SSE * (nk_bw^penalty)
       knots_r1 <- knots
       bw_selk  <- h1
@@ -465,73 +465,15 @@ TKS <- function( Y, X, coords, R, test_set=NULL, M=round(0.1*nrow(X)), penalty=0
   }
   
   
-  if( nres==2 ){
-    # Select a second resolution of knots
-    nk_sel          <- nrow(knots_r1)
-    have_second_res <- FALSE
-    slices_r2       <- slices
-    
-    iter <- 0
-    
-    if( nk_sel < 120 ){
-      # Look for larger set of knots within those already found
-      if( any( BandSel[,2]>= (nk_sel*3) ) ){
-        idx             <- which.max( BandSel[,2] >= (nk_sel*3)  )
-        have_second_res <- TRUE
-        knots_r2        <- all_knot_sets[[idx]]
-      }
-      
-      # Otherwise, need to do some more searching
-      #slices_r2 <- seq( max(slice_int) , min(slice_int) , length.out= ceiling(length(slices)*1.25) )
-      while( have_second_res==FALSE ){
-        iter <- iter+1
-        h1_r2 <- bw_selk*0.9
-        knots_r2 <- empirical_knots( coords=coords_train , R=R_train , delta1=h1_r2 , delta2=h1_r2 ,
-                                     slices=slices_r2 , ... )
-        if( nrow(knots_r2) >= nk_sel*3 | iter>30 ){
-          have_second_res <- TRUE
-          if( nrow(knots_r2) < nk_sel*3 ){
-            # knots_r2 <- gen_loca( method="grid" , ns=nk_sel * 3 )
-            knots_r2 <- cover.design( coords_train[ duplicated(coords_train)==FALSE, ] , nd=(nk_sel*3) )
-          }
-        }
-      }
-    }  else{
-      # Look for smaller set of knots within those already found
-      if( any( BandSel[,2]<= ceiling(nk_sel/3) ) ){
-        idx             <- which.min( BandSel[,2] <= ceiling(nk_sel/3) )
-        have_second_res <- TRUE
-        knots_r2        <- all_knot_sets[[idx]]
-      }
-      
-      # Otherwise, need to do some more searching
-      #slices_r2 <- seq( max(slice_int) , min(slice_int) , length.out= ceiling(length(slices)*0.75) )
-      while( have_second_res==FALSE ){
-        iter <- iter+1
-        h1_r2 <- bw_selk*1.1
-        knots_r2 <- empirical_knots( coords=coords_train , R=R_train , delta1=h1_r2 , delta2=h1_r2*1.5 ,
-                                     slices=slices_r2 , ... )
-        if( nrow(knots_r2) <= ceiling(nk_sel/3) | iter>30 ){
-          have_second_res <- TRUE
-          if( nrow(knots_r2) > ceiling(nk_sel/3) ){
-            # knots_r2 <- gen_loca( method="grid" , ns=ceiling(nk_sel/3) )
-            knots_r2 <- cover.design( coords_train[ duplicated(coords_train)==FALSE, ] , nd=ceiling(nk_sel/3) )
-          }
-        }
-      }
-    }
-  } else{
-    knots_r2 <- NULL
-  }
-  
-  # plot( BandSel[,1] , BandSel[,2]*BandSel[,3] , type='b' )
-  # cbind( BandSel[,1] , BandSel[,2]*BandSel[,3] )
-  # BandSel
-  # easy.map( cbind(coords,Y) , knots=knots_r1 )
+  #  plot( BandSel[,1] , BandSel[,3]*(BandSel[,2]^penalty) , type='b' )
+  #  plot( BandSel[,1] , BandSel[,3] , type='b' )
+  #  cbind( BandSel[,1] , BandSel[,2]*BandSel[,3] )
+  #  BandSel
+  #  easy.map( cbind(coords,Y) , knots=knots_r1 )
   
   ## Return Objects
   colnames(BandSel) <- c("h1" , "r" , "SSE")
-  Return.Obj <- list( knots=knots_r1, knots2=knots_r2 , BandSel=BandSel , h1=bw_selk )
+  Return.Obj <- list( knots=knots_r1 , BandSel=BandSel , h1=bw_selk )
   
   return( Return.Obj )
   
@@ -539,4 +481,72 @@ TKS <- function( Y, X, coords, R, test_set=NULL, M=round(0.1*nrow(X)), penalty=0
 
 
 
+
+
+
+#' Augment a set of knots with a grid
+#' 
+#' @description
+#' Takes a set of knot locations and augments it with a grid, so that `empty` areas are filled.
+#' 
+#' @param init_knots the initial set of knots, e.g., selected using TKS.
+#' @param xdim the x-coordinate limits of the spatial domain
+#' @param ydim the y-coordinate limits of the spatial domain
+#' @param kclose the number of other knots to consider as the `neighborhood' of a knot. See details.
+#' 
+#' @details 
+#' \code{awg_knots} computes the average distance to the next \code{kclose} knots, and creates a grid
+#' of knots such that the minimum distance is approximately equal to this value. More precisely, let
+#' U be the set of initial knots, and U[j,] be a particular knot. Then if \code{kclose} = 2 , the
+#' pairwise distances between U[j,] and U[-j,] are computed, and the smallest two are averaged.
+#' Suppose a vector \code{d} contains all these mean distances d[j], for j = 1, ..., nrow(init_knots).
+#' Then \code{mean(d)} is the average distance to the next \code{kclose} knots.
+#' 
+#' @return
+#' A matrix containing a set of locations.
+#' 
+#' @seealso
+#' \code{\link{TKS}}
+#' 
+#' @export
+#' 
+
+awg_knots <- function( init_knots, xdim=c(0,100), ydim=c(0,100), kclose=2  ){
+  
+  
+  if(  length(init_knots[,1]) < kclose-1  ){
+    ## Generate grid
+    nkg1a <- max( c(length(init_knots[,1]), 16 ) )
+    gk1a  <- gen_loca( "grid", ns=nkg1a )
+  } else{
+    
+    ## Average dist from "kclose" closest knots
+    d1a <- mean(apply( pairwise_dist(init_knots), 1, 
+                       FUN=function(x,kk){mean( sort(x[ x>0 ])[1:kk] , na.rm=TRUE)}, kk=kclose ))
+    
+    ## Generate grid of knots
+    xnum <- (max(xdim) - min(xdim)) / d1a
+    ynum <- (max(ydim) - min(ydim)) / d1a
+    nkg1a <- round( xnum * ynum )
+    #nkg1a <- round(100/d1a)
+    gk1a  <- gen_loca( "grid", ns=nkg1a )
+    
+  }
+  
+  
+  ## Find the average distance to the next "kclose" grid knots
+  d1b <- mean(apply( pairwise_dist(gk1a), 1, 
+                     FUN=function(x,kk){mean( sort(x[ x>0 ])[1:kk] , na.rm=TRUE)}, kk=kclose ))
+  
+  ## Find which of the GRID knots are "too close" to the TKS knots
+  pd1 <- rowSums( pairwise_dist( gk1a, init_knots ) < d1b/2 ) > 0
+  
+  ## And then drop them
+  gk1b <- gk1a[pd1==FALSE,]
+  aug_knots <- rbind( init_knots, gk1b )
+  
+  ## Return the TKS knots augmented by the grid
+  return(aug_knots)
+  
+}
 

@@ -1,4 +1,5 @@
-#include <Rcpp.h>
+// #include <Rcpp.h>
+#include <RcppArmadillo.h>
 using namespace Rcpp;
 
 
@@ -8,7 +9,7 @@ RcppExport long double dplusC( NumericVector xx) {
 int n1 = xx.size();
 
 // Get the HL estimator
-NumericVector pairSum( (n1*(n1+1))/2 );
+Rcpp::NumericVector pairSum( (n1*(n1+1))/2 );
 int idx = -1;
 for (int ii=0; ii < n1; ii++){
  for (int jj=ii; jj < n1; jj++){
@@ -31,9 +32,10 @@ else{
 
 // Subtract HL from values
 long double yy1;
-NumericVector yy( n1 );
+Rcpp::NumericVector yy( n1 );
 for (int ii=0; ii < n1; ii++){
-  long double yy1 = xx[ii] - HL ;
+  // long double  y1     = xx[ii] - HL ;
+  yy1     = xx[ii] - HL ;
   yy[ii] = ((yy1>0) - (yy1<0))*yy1 ;
 }
 
@@ -47,9 +49,9 @@ long double avRank = 0.0;
 
 int ii  = 0 ;
 int ii2 = 0;
-int ii3 = 0;
+//int ii3 = 0;
 
-NumericVector ranks(n1);
+Rcpp::NumericVector ranks(n1);
 
 
 // Get the midranks
@@ -81,7 +83,8 @@ while( ii <= n1 - 1 ){
     runStop = ii2 - 1;
     
     for( int ii3=runStart; ii3<=runStop; ii3++){
-      long double avRank = rankSum /(long double) (runStop-runStart+1) ;  
+	  //long double avRank = rankSum /(long double) (runStop-runStart+1) ;  
+      avRank = rankSum /(long double) (runStop-runStart+1) ;  
       ranks[ii3] = avRank;
     }
     

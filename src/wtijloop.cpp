@@ -1,12 +1,13 @@
-#include <Rcpp.h>
+// #include <Rcpp.h>
+#include <RcppArmadillo.h>
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-RcppExport NumericVector wtijloop( float cc, NumericVector ahat) {
+NumericVector wtijloop( float cc, NumericVector ahat) {
 int n1 = ahat.size();
 int m1 = n1*(n1-1)/2;
 
-NumericVector wtij(m1);
+Rcpp::NumericVector wtij(m1);
 
 long double K;
 long double cc2 = cc*cc;

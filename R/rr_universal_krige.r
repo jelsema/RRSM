@@ -77,7 +77,7 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
   
   ## START OF KRIGING
   if( round(ncore)==ncore & ncore > 1 ){
-    ## SIMULTANEOUS PREDICTION (PARALLEL PROCESSING)
+    ## PREDICTION (PARALLEL)
     registerDoParallel(ncore)
     
     Preds1 <- foreach( krg = 1:ngrid, .combine='rbind', .packages="foreach" ) %dopar% {
@@ -87,7 +87,7 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
       # Get the proper Cwk(So)
       Ck <- SkSo %*% V %*% t(S);
       
-      # Get the Xso vector (using Legendre polynomials)
+      # Get the Xso vector
       XSo1 <- Xpred[krg,]
       
       # Prediction: Preds[krg,3]
@@ -111,7 +111,7 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
     Preds[,3:4] <- Preds1
     
   } else{
-    ## SEQUENTIAL PREDICTIONS
+    ## PREDICTION (NOT PARALLEL)
     
     for( krg in 1:ngrid ){
       
@@ -146,7 +146,8 @@ rr_universal_krige <- function( Y, X, S=NULL, coords, pgrid=coords, Xpred=X ,
   } ## END OF KRIGING
   colnames(Preds) <- c( "Xdim" , "Ydim" , "Y" , "RMSPE" )
   rownames(Preds) <- NULL
-    
+  
+  Preds <- data.frame(Preds)
   
   ## Return the results  
   return_obj <- list( Preds=Preds , bhat=bhat )
